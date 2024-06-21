@@ -1,3 +1,4 @@
+// models/Reservation.js
 const mongoose = require('mongoose');
 
 const ReservationSchema = new mongoose.Schema({
@@ -14,6 +15,6 @@ const ReservationSchema = new mongoose.Schema({
     idType: { type: String, required: true },
     idNumber: { type: String, required: true },
     countryIssuance: { type: String, required: true },
-}, { timestamps: true });
+});
 
 module.exports = mongoose.model('Reservation', ReservationSchema);

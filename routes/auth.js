@@ -1,52 +1,89 @@
+// routes/auth.js
 const express = require('express');
-const router = express.Router();
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const authMiddleware = require('../middleware/auth');
+const User = require('../models/User');
 
-router.post('/signup', async (req, res) => {
-    const { email, username, password, confirmpassword } = req.body;
+const router = express.Router();
 
-    if (password !== confirmpassword) {
-        return res.status(400).json({ msg: 'Passwords do not match' });
-    }
+// Register
+router.post('/register', async (req, res) => {
+    const { username, email, password } = req.body;
 
     try {
-        const user = new User({ email, username, password });
+        let user = await User.findOne({ email });
+
+        if (user) {
+            return res.status(400).json({ msg: 'User already exists' });
+        }
+
+        user = new User({
+            username,
+            email,
+            password,
+        });
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+
         await user.save();
-        res.status(201).json({ msg: 'User created successfully' });
+
+        const payload = {
+            user: {
+                id: user.id,
+            },
+        };
+
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: 360000 },
+            (err, token) => {
+                if (err) throw err;
+                res.json({ token });
+            }
+        );
     } catch (err) {
-        res.status(500).json({ msg: 'Error creating user', error: err.message });
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
 });
 
+// Login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        let user = await User.findOne({ email });
+
         if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token });
-    } catch (err) {
-        res.status(500).json({ msg: 'Error logging in', error: err.message });
-    }
-});
+        const payload = {
+            user: {
+                id: user.id,
+            },
+        };
 
-router.get('/me', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('-password');
-        res.json(user);
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: 360000 },
+            (err, token) => {
+                if (err) throw err;
+                res.json({ token });
+            }
+        );
     } catch (err) {
-        res.status(500).json({ msg: 'Error fetching user', error: err.message });
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
 });
 

@@ -1,13 +1,16 @@
+
 {
     "version": 2,
     "builds": [
-      { "src": "package.json", "use": "@vercel/node" }
+      {
+        "src": "server.js",
+        "use": "@vercel/node"
+      }
     ],
     "routes": [
-      { "handle": "filesystem" },
       {
         "src": "/(.*)",
-        "dest": "/public/index.html"
+        "dest": "server.js"
       }
     ]
   }

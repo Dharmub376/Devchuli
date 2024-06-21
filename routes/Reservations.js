@@ -1,17 +1,19 @@
+// routes/reservation.js
 const express = require('express');
-const router = express.Router();
-const Reservation = require('../models/Reservation');
+const Reservation = require('../models/reservation');
 
-// @route   POST /reserve
-// @desc    Create a new reservation
-// @access  Public
-router.post('/', async (req, res) => {
+const router = express.Router();
+
+router.post('/reserve', async (req, res) => {
+    const reservationData = req.body;
+
     try {
-        const newReservation = new Reservation(req.body);
-        await newReservation.save();
+        const reservation = new Reservation(reservationData);
+        await reservation.save();
         res.redirect('/payment.html');
     } catch (err) {
-        res.status(500).json({ msg: 'Error creating reservation', error: err.message });
+        console.error(err.message);
+        res.status(500).send('Server error');
     }
 });
 
