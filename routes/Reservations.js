@@ -1,4 +1,3 @@
-// routes/reservation.js
 const express = require('express');
 const Reservation = require('../models/reservation');
 
